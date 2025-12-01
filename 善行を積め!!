@@ -11,10 +11,11 @@ WIDTH, HEIGHT = info.current_w, info.current_h
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("積みゲー：フルスクリーン")
 
+
 clock = pygame.time.Clock()
 FPS = 60
 
-print(1)
+#uyeshotaにも家族がいる
 # 色
 SKY = (200, 230, 255)
 BLOCK_COLOR = (255, 100, 100)
