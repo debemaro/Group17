@@ -1,6 +1,6 @@
 import pygame
 import sys
-#iiiii
+
 #初期化
 pygame.init()
 
@@ -14,6 +14,7 @@ pygame.display.set_caption("積みゲー：フルスクリーン")
 clock = pygame.time.Clock()
 FPS = 60
 
+print(1)
 # 色
 SKY = (200, 230, 255)
 BLOCK_COLOR = (255, 100, 100)
