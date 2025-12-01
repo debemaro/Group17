@@ -1,0 +1,58 @@
+import pygame
+import sys
+
+#初期化
+pygame.init()
+
+# 解像度とか
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+pygame.display.set_caption("積みゲー：フルスクリーン")
+
+clock = pygame.time.Clock()
+FPS = 60
+
+# 色
+SKY = (200, 230, 255)
+BLOCK_COLOR = (255, 100, 100)
+GROUND_COLOR = (80, 60, 40)
+
+# ブロック
+BLOCK_W, BLOCK_H = 60, 30
+block = pygame.Rect(WIDTH/2 - BLOCK_W/2, 50, BLOCK_W, BLOCK_H)
+
+
+def draw_ground():
+    pygame.draw.rect(screen, GROUND_COLOR, (0, HEIGHT-100, WIDTH, 100))
+
+def main():
+    global block
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            # ESCキーで終了
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+
+        # 背景
+        screen.fill(SKY)
+
+        # カーソル
+        mouse_x, _ = pygame.mouse.get_pos()
+        block.x = mouse_x - BLOCK_W/2
+
+
+        # 描画
+        pygame.draw.rect(screen, BLOCK_COLOR, block)
+        draw_ground()
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+if __name__ == "__main__":
+    main()
