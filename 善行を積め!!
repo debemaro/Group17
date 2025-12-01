@@ -15,7 +15,7 @@ pygame.display.set_caption("積みゲー：フルスクリーン")
 clock = pygame.time.Clock()
 FPS = 60
 
-#uyeshotaにも家族がいる
+
 # 色
 SKY = (200, 230, 255)
 BLOCK_COLOR = (255, 100, 100)
