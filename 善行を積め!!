@@ -1,8 +1,17 @@
 import pygame
 import sys
+import pymunk
+import random
 
-#初期化
+# 初期化
 pygame.init()
+
+# フォント
+font = pygame.font.SysFont("meiryo", 60)
+small_font = pygame.font.SysFont("meiryo", 30)
+
+#画像
+sky_img = pygame.image.load("sky.png")
 
 # 解像度とか
 info = pygame.display.Info()
@@ -11,6 +20,8 @@ WIDTH, HEIGHT = info.current_w, info.current_h
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("積みゲー：フルスクリーン")
 
+sky_img = pygame.transform.scale(sky_img, (WIDTH, HEIGHT))
+
 clock = pygame.time.Clock()
 FPS = 60
 
@@ -18,17 +29,89 @@ FPS = 60
 SKY = (200, 230, 255)
 BLOCK_COLOR = (255, 100, 100)
 GROUND_COLOR = (80, 60, 40)
+BUTTON_COLOR = (255, 255, 25)
 
 # ブロック
 BLOCK_W, BLOCK_H = 60, 30
 block = pygame.Rect(WIDTH/2 - BLOCK_W/2, 50, BLOCK_W, BLOCK_H)
 
+STATE_TITLE = "title"
+STATE_PLAY = "play"
+STATE_RULE = "rule"
+game_state = STATE_TITLE
+
+# スタートボタン
+button_w, button_h = 250, 100
+start_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//2, button_w, button_h)
+rule_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//1.5, button_w, button_h)
+def draw_title():
+    screen.blit(sky_img, (0, 0))
+    title_text = font.render("善行を積め!!", True, (0, 0, 0))
+    screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//3))
+
+    # マウス位置で色を変える
+    color = BUTTON_COLOR
+
+    # ボタン描画
+    #startボタンの表示
+    pygame.draw.rect(screen, color, start_button,border_radius=20)
+    start_text = font.render("スタート", True, (0, 0, 0))
+    screen.blit(start_text, (start_button.centerx - start_text.get_width()//2,
+         start_button.centery - start_text.get_height()//2))
+    pygame.draw.rect(screen, (0,0,0), start_button, 3, border_radius=20)
+    #ルールボタンの表示
+    pygame.draw.rect(screen, color, rule_button,border_radius=20)
+    rule_text = font.render("遊び方", True, (0,0,0))
+    screen.blit(rule_text, (rule_button.centerx - rule_text.get_width()//2, rule_button.centery - rule_text.get_height()//2))
+    pygame.draw.rect(screen, (0,0,0), rule_button, 3, border_radius=20)
+
+back_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//1.2, button_w, button_h)
+def draw_rule():
+    screen.fill((220, 220, 220))  # 背景色をベージュに
+
+    # ルール説明文をリストで用意
+    rules = [
+        "【遊び方】",
+        "1. マウスでブロックを左右に動かします。",
+        "2. スペースキー、またはマウスの左クリックでブロックを落とします。",
+        "3. 地面や積み上げたブロックに重ねて積みます。",
+        "4. 高く積み上げるとスコアアップ！"
+    ]
+
+    # 1行ずつ描画
+    y = HEIGHT // 4
+    for line in rules:
+        rule_text = small_font.render(line, True, (0, 0, 0))
+        screen.blit(rule_text, (WIDTH//2 - rule_text.get_width()//2, y))
+        y += 70  # 行間を空ける
+
+    # 戻るボタン描画
+    pygame.draw.rect(screen, BUTTON_COLOR, back_button, border_radius=20)
+    back_text = font.render("戻る", True, (0,0,0))
+    screen.blit(back_text, (back_button.centerx - back_text.get_width()//2,
+                            back_button.centery - back_text.get_height()//2))
+    pygame.draw.rect(screen, (0,0,0), back_button, 3, border_radius=20)
+
+
+
 
 def draw_ground():
     pygame.draw.rect(screen, GROUND_COLOR, (0, HEIGHT-100, WIDTH, 100))
 
+def draw_play():
+    # 背景
+    screen.fill(SKY)
+
+    # カーソルでブロックを動かす
+    mouse_x, _ = pygame.mouse.get_pos()
+    block.x = mouse_x - BLOCK_W//2
+
+    # 描画
+    pygame.draw.rect(screen, BLOCK_COLOR, block)
+    draw_ground()
+
 def main():
-    global block
+    global block, game_state
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -39,17 +122,28 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-        # 背景
-        screen.fill(SKY)
+            if game_state == STATE_TITLE:
+                # クリックで開始
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_button.collidepoint(event.pos):
+                        game_state = STATE_PLAY
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if rule_button.collidepoint(event.pos):
+                        game_state = STATE_RULE
+                
+            if game_state == STATE_RULE:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_button.collidepoint(event.pos):
+                        game_state = STATE_TITLE
 
-        # カーソル
-        mouse_x, _ = pygame.mouse.get_pos()
-        block.x = mouse_x - BLOCK_W/2
-
-
-        # 描画
-        pygame.draw.rect(screen, BLOCK_COLOR, block)
-        draw_ground()
+        # 状態に応じて描画
+        if game_state == STATE_TITLE:
+            draw_title()
+        elif game_state == STATE_PLAY:
+            draw_play()
+        elif game_state == STATE_RULE:
+            draw_rule()
 
         pygame.display.flip()
         clock.tick(FPS)
