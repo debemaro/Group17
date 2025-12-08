@@ -7,6 +7,7 @@ import random
 pygame.init()
 
 # フォント
+big_font = pygame.font.SysFont("meiryo",100)
 font = pygame.font.SysFont("meiryo", 60)
 small_font = pygame.font.SysFont("meiryo", 30)
 
@@ -16,12 +17,14 @@ sky_img = pygame.image.load("sky.png")
 # 解像度とか
 info = pygame.display.Info()
 WIDTH, HEIGHT = info.current_w, info.current_h
-
+disp_size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("積みゲー：フルスクリーン")
 
 sky_img = pygame.transform.scale(sky_img, (WIDTH, HEIGHT))
 
+space = pymunk.Space()
+space.gravity = 0, -1000
 clock = pygame.time.Clock()
 FPS = 60
 
@@ -35,6 +38,9 @@ BUTTON_COLOR = (255, 255, 25)
 BLOCK_W, BLOCK_H = 60, 30
 block = pygame.Rect(WIDTH/2 - BLOCK_W/2, 50, BLOCK_W, BLOCK_H)
 
+def convert_cordinates(point):
+    return point[0], disp_size[1]-point[1]
+
 STATE_TITLE = "title"
 STATE_PLAY = "play"
 STATE_RULE = "rule"
@@ -46,8 +52,8 @@ start_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//2, button_w, button_h
 rule_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//1.5, button_w, button_h)
 def draw_title():
     screen.blit(sky_img, (0, 0))
-    title_text = font.render("善行を積め!!", True, (0, 0, 0))
-    screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//3))
+    title_text = big_font.render("善行を積め!!", True, (0, 0, 0))
+    screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//4))
 
     # マウス位置で色を変える
     color = BUTTON_COLOR
@@ -93,22 +99,98 @@ def draw_rule():
     pygame.draw.rect(screen, (0,0,0), back_button, 3, border_radius=20)
 
 
+class Ball(object):
+    def __init__(self, x, y, color, radius, mass, collision_type):
+        self.color = color
+        self.body = pymunk.Body(body_type=pymunk.Body.DYNAMIC)
+        self.body.position = x, 700
+        self.body.mass = mass
+        self.shape = pymunk.Circle(self.body, radius)
+        self.shape.collision_type = collision_type
+        self.shape.density = 1
+        self.shape.elasticity = 0.5
+        self.shape.friction = 0.5
+        space.add(self.body, self.shape)
+    def draw(self):
+        pygame.draw.circle(
+            screen,
+            self.color,
+            convert_cordinates(self.body.position),
+            self.shape.radius
+        )
 
+class Field():
+    def __init__(self, tlx, tly, brx, bry):
+        self.tlx = tlx
+        self.tly = tly
+        self.brx = brx
+        self.bry = bry
+        self.edge = int(brx - tlx)
+        self.step = 7
+        self.width = 3
+        # Start and Stop
+        self.bl_start, self.bl_stop = (tlx, bry), (brx, bry)
+        # Create Line
+        self.create_line(self.bl_start, self.bl_stop)  # Bottom
+    def draw(self):
+        x1, y1 = convert_cordinates(self.bl_start)
+        x2, y2 = convert_cordinates(self.bl_stop)
 
-def draw_ground():
-    pygame.draw.rect(screen, GROUND_COLOR, (0, HEIGHT-100, WIDTH, 100))
+        left   = min(x1, x2)
+        top    = min(y1, y2)
+        width  = abs(x2 - x1)
+        height = 100  # 線の太さを矩形の高さにする
+
+        pygame.draw.rect(
+            screen,
+            (80, 60, 40),
+         (left, top, width, height)
+        )
+
+    def create_line(self, start, stop):
+        body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        shape = pymunk.Segment(body, start, stop, self.width)
+        shape.elasticity = 0.75
+        shape.friction = 0.9
+        space.add(shape, body)
 
 def draw_play():
-    # 背景
-    screen.fill(SKY)
+# Field
+    tlx, tly = 200, 100
+    brx, bry = 1100, 100
+    field = Field(tlx, tly, brx, bry)
 
-    # カーソルでブロックを動かす
-    mouse_x, _ = pygame.mouse.get_pos()
-    block.x = mouse_x - BLOCK_W//2
+# Ball
+    balls = []
 
-    # 描画
-    pygame.draw.rect(screen, BLOCK_COLOR, block)
-    draw_ground()
+    # Game Start
+    while(True):
+        for event in pygame.event.get():
+            if(event.type == pygame.QUIT):
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+            if(event.type == pygame.MOUSEBUTTONDOWN):
+                x, y = convert_cordinates(event.pos)
+                balls.append(
+                    Ball(x, y, (0,0,0), 50, 50,0)
+                )
+        # Fiil background
+        screen.fill(SKY)
+
+         # Draw Field
+        field.draw()
+
+        # Draw Ball
+        for ball in balls:
+            ball.draw()
+
+        # Display Update
+        pygame.display.update()
+        clock.tick(FPS)
+        space.step(1/FPS)
 
 def main():
     global block, game_state
