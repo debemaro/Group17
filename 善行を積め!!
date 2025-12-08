@@ -1,20 +1,19 @@
 import pygame
 import sys
 import pymunk
-import random
 
 # 初期化
 pygame.init()
 
 # フォント
-big_font = pygame.font.SysFont("meiryo",100)
+big_font = pygame.font.SysFont("meiryo", 100)
 font = pygame.font.SysFont("meiryo", 60)
 small_font = pygame.font.SysFont("meiryo", 30)
 
-#画像
+# 画像
 sky_img = pygame.image.load("sky.png")
 
-# 解像度とか
+# 解像度
 info = pygame.display.Info()
 WIDTH, HEIGHT = info.current_w, info.current_h
 disp_size = (WIDTH, HEIGHT)
@@ -23,6 +22,7 @@ pygame.display.set_caption("積みゲー：フルスクリーン")
 
 sky_img = pygame.transform.scale(sky_img, (WIDTH, HEIGHT))
 
+# 物理空間
 space = pymunk.Space()
 space.gravity = 0, -1000
 clock = pygame.time.Clock()
@@ -30,52 +30,48 @@ FPS = 60
 
 # 色
 SKY = (200, 230, 255)
-BLOCK_COLOR = (255, 100, 100)
-GROUND_COLOR = (80, 60, 40)
 BUTTON_COLOR = (255, 255, 25)
 
-# ブロック
-BLOCK_W, BLOCK_H = 60, 30
-block = pygame.Rect(WIDTH/2 - BLOCK_W/2, 50, BLOCK_W, BLOCK_H)
-
 def convert_cordinates(point):
-    return point[0], disp_size[1]-point[1]
+    return point[0], disp_size[1] - point[1]
 
+# 状態管理
 STATE_TITLE = "title"
 STATE_PLAY = "play"
 STATE_RULE = "rule"
 game_state = STATE_TITLE
 
-# スタートボタン
+# ボタン
 button_w, button_h = 250, 100
-start_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//2, button_w, button_h)
-rule_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//1.5, button_w, button_h)
+start_button = pygame.Rect(WIDTH // 2 - button_w // 2, HEIGHT // 2, button_w, button_h)
+rule_button = pygame.Rect(WIDTH // 2 - button_w // 2, HEIGHT // 1.5, button_w, button_h)
+back_button = pygame.Rect(WIDTH // 2 - button_w // 2, HEIGHT // 1.2, button_w, button_h)
+temporary_button = pygame.Rect(WIDTH-70, 10, 60, 60)
+temporary_one = pygame.Rect(WIDTH-55, 25, 8,30)
+temporary_two = pygame.Rect(WIDTH-33, 25, 8,30)
+
 def draw_title():
     screen.blit(sky_img, (0, 0))
     title_text = big_font.render("善行を積め!!", True, (0, 0, 0))
-    screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//4))
+    screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
 
-    # マウス位置で色を変える
-    color = BUTTON_COLOR
-
-    # ボタン描画
-    #startボタンの表示
-    pygame.draw.rect(screen, color, start_button,border_radius=20)
+    # スタートボタン
+    pygame.draw.rect(screen, BUTTON_COLOR, start_button, border_radius=20)
     start_text = font.render("スタート", True, (0, 0, 0))
-    screen.blit(start_text, (start_button.centerx - start_text.get_width()//2,
-         start_button.centery - start_text.get_height()//2))
-    pygame.draw.rect(screen, (0,0,0), start_button, 3, border_radius=20)
-    #ルールボタンの表示
-    pygame.draw.rect(screen, color, rule_button,border_radius=20)
-    rule_text = font.render("遊び方", True, (0,0,0))
-    screen.blit(rule_text, (rule_button.centerx - rule_text.get_width()//2, rule_button.centery - rule_text.get_height()//2))
-    pygame.draw.rect(screen, (0,0,0), rule_button, 3, border_radius=20)
+    screen.blit(start_text, (start_button.centerx - start_text.get_width() // 2,
+                             start_button.centery - start_text.get_height() // 2))
+    pygame.draw.rect(screen, (0, 0, 0), start_button, 3, border_radius=20)
 
-back_button = pygame.Rect(WIDTH//2 - button_w//2, HEIGHT//1.2, button_w, button_h)
+    # ルールボタン
+    pygame.draw.rect(screen, BUTTON_COLOR, rule_button, border_radius=20)
+    rule_text = font.render("遊び方", True, (0, 0, 0))
+    screen.blit(rule_text, (rule_button.centerx - rule_text.get_width() // 2,
+                            rule_button.centery - rule_text.get_height() // 2))
+    pygame.draw.rect(screen, (0, 0, 0), rule_button, 3, border_radius=20)
+
 def draw_rule():
-    screen.fill((220, 220, 220))  # 背景色をベージュに
+    screen.fill((220, 220, 220))
 
-    # ルール説明文をリストで用意
     rules = [
         "【遊び方】",
         "1. マウスでブロックを左右に動かします。",
@@ -84,22 +80,20 @@ def draw_rule():
         "4. 高く積み上げるとスコアアップ！"
     ]
 
-    # 1行ずつ描画
     y = HEIGHT // 4
     for line in rules:
         rule_text = small_font.render(line, True, (0, 0, 0))
-        screen.blit(rule_text, (WIDTH//2 - rule_text.get_width()//2, y))
-        y += 70  # 行間を空ける
+        screen.blit(rule_text, (WIDTH // 2 - rule_text.get_width() // 2, y))
+        y += 70
 
-    # 戻るボタン描画
+    # 戻るボタン
     pygame.draw.rect(screen, BUTTON_COLOR, back_button, border_radius=20)
-    back_text = font.render("戻る", True, (0,0,0))
-    screen.blit(back_text, (back_button.centerx - back_text.get_width()//2,
-                            back_button.centery - back_text.get_height()//2))
-    pygame.draw.rect(screen, (0,0,0), back_button, 3, border_radius=20)
+    back_text = font.render("戻る", True, (0, 0, 0))
+    screen.blit(back_text, (back_button.centerx - back_text.get_width() // 2,
+                            back_button.centery - back_text.get_height() // 2))
+    pygame.draw.rect(screen, (0, 0, 0), back_button, 3, border_radius=20)
 
-
-class Ball(object):
+class Ball:
     def __init__(self, x, y, color, radius, mass, collision_type):
         self.color = color
         self.body = pymunk.Body(body_type=pymunk.Body.DYNAMIC)
@@ -111,41 +105,25 @@ class Ball(object):
         self.shape.elasticity = 0.5
         self.shape.friction = 0.5
         space.add(self.body, self.shape)
-    def draw(self):
-        pygame.draw.circle(
-            screen,
-            self.color,
-            convert_cordinates(self.body.position),
-            self.shape.radius
-        )
 
-class Field():
+    def draw(self):
+        pygame.draw.circle(screen, self.color,
+                           convert_cordinates(self.body.position),
+                           self.shape.radius)
+
+class Field:
     def __init__(self, tlx, tly, brx, bry):
-        self.tlx = tlx
-        self.tly = tly
-        self.brx = brx
-        self.bry = bry
-        self.edge = int(brx - tlx)
-        self.step = 7
-        self.width = 3
-        # Start and Stop
         self.bl_start, self.bl_stop = (tlx, bry), (brx, bry)
-        # Create Line
-        self.create_line(self.bl_start, self.bl_stop)  # Bottom
+        self.width = 3
+        self.create_line(self.bl_start, self.bl_stop)
+
     def draw(self):
         x1, y1 = convert_cordinates(self.bl_start)
         x2, y2 = convert_cordinates(self.bl_stop)
-
-        left   = min(x1, x2)
-        top    = min(y1, y2)
-        width  = abs(x2 - x1)
-        height = 100  # 線の太さを矩形の高さにする
-
-        pygame.draw.rect(
-            screen,
-            (80, 60, 40),
-         (left, top, width, height)
-        )
+        left, top = min(x1, x2), min(y1, y2)
+        width = abs(x2 - x1)
+        height = 100
+        pygame.draw.rect(screen, (80, 60, 40), (left, top, width, height))
 
     def create_line(self, start, stop):
         body = pymunk.Body(body_type=pymunk.Body.STATIC)
@@ -154,72 +132,110 @@ class Field():
         shape.friction = 0.9
         space.add(shape, body)
 
+# 物理空間リセット関数
+def reset_space():
+    global space
+    space = pymunk.Space()
+    space.gravity = 0, -1000
+
 def draw_play():
-# Field
-    tlx, tly = 200, 100
-    brx, bry = 1100, 100
-    field = Field(tlx, tly, brx, bry)
-
-# Ball
+    global paused, game_state
+    paused = False
+    field = Field(200, 100, 1100, 100)
     balls = []
+    resume_button, title_button = None, None
 
-    # Game Start
-    while(True):
+    while True:
         for event in pygame.event.get():
-            if(event.type == pygame.QUIT):
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                pygame.quit()
-                sys.exit()
-            if(event.type == pygame.MOUSEBUTTONDOWN):
-                x, y = convert_cordinates(event.pos)
-                balls.append(
-                    Ball(x, y, (0,0,0), 50, 50,0)
-                )
-        # Fiil background
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if temporary_button.collidepoint(event.pos):
+                    paused = True
+                elif paused and resume_button and resume_button.collidepoint(event.pos):
+                    paused = False
+                elif paused and title_button and title_button.collidepoint(event.pos):
+                    paused = False
+                    game_state = STATE_TITLE
+                    reset_space()   # ← ここでリセット
+                    return
+                elif not paused:
+                    x, y = convert_cordinates(event.pos)
+                    balls.append(Ball(x, y, (0,0,0), 50, 50, 0))
+
         screen.fill(SKY)
-
-         # Draw Field
         field.draw()
-
-        # Draw Ball
         for ball in balls:
             ball.draw()
 
-        # Display Update
+        # ポーズボタン描画
+        pygame.draw.rect(screen, (0,0,0), temporary_button,3, border_radius=10)
+        pygame.draw.rect(screen,(0,0,0),temporary_one, border_radius = 5)
+        pygame.draw.rect(screen,(0,0,0),temporary_two, border_radius = 5)
+
+        if paused:
+            resume_button, title_button = draw_pause_overlay()
+
         pygame.display.update()
         clock.tick(FPS)
-        space.step(1/FPS)
+        space.step(1 / FPS)
+
+def draw_pause_overlay():
+    # 半透明の背景
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))
+    screen.blit(overlay, (0, 0))
+
+    # ポーズメニューの小画面
+    menu_w, menu_h = 600, 400
+    menu_rect = pygame.Rect(WIDTH//2 - menu_w//2, HEIGHT//2 - menu_h//2, menu_w, menu_h)
+    pygame.draw.rect(screen, (240, 240, 240), menu_rect, border_radius=20)
+    pygame.draw.rect(screen, (0, 0, 0), menu_rect, 3, border_radius=20)
+
+    # テキスト
+    pause_text = font.render("ポーズ中", True, (0, 0, 0))
+    screen.blit(pause_text, (menu_rect.centerx - pause_text.get_width()//2,
+                             menu_rect.top + 40))
+
+    # 再開ボタン
+    resume_button = pygame.Rect(menu_rect.centerx - 120, menu_rect.centery - 40, 240, 60)
+    pygame.draw.rect(screen, BUTTON_COLOR, resume_button, border_radius=15)
+    resume_text = small_font.render("再開", True, (0, 0, 0))
+    screen.blit(resume_text, (resume_button.centerx - resume_text.get_width()//2,
+                              resume_button.centery - resume_text.get_height()//2))
+    pygame.draw.rect(screen, (0,0,0), resume_button, 2, border_radius=15)
+
+    # タイトルへ戻るボタン
+    title_button = pygame.Rect(menu_rect.centerx - 120, menu_rect.centery + 40, 240, 60)
+    pygame.draw.rect(screen, BUTTON_COLOR, title_button, border_radius=15)
+    title_text = small_font.render("タイトルへ戻る", True, (0, 0, 0))
+    screen.blit(title_text, (title_button.centerx - title_text.get_width()//2,
+                             title_button.centery - title_text.get_height()//2))
+    pygame.draw.rect(screen, (0,0,0), title_button, 2, border_radius=15)
+
+    return resume_button, title_button
+
 
 def main():
-    global block, game_state
+    global game_state
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            # ESCキーで終了
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 pygame.quit()
                 sys.exit()
 
             if game_state == STATE_TITLE:
-                # クリックで開始
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if start_button.collidepoint(event.pos):
                         game_state = STATE_PLAY
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if rule_button.collidepoint(event.pos):
+                    elif rule_button.collidepoint(event.pos):
                         game_state = STATE_RULE
-                
-            if game_state == STATE_RULE:
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_button.collidepoint(event.pos):
-                        game_state = STATE_TITLE
 
-        # 状態に応じて描画
+            elif game_state == STATE_RULE:
+                if event.type == pygame.MOUSEBUTTONDOWN and back_button.collidepoint(event.pos):
+                    game_state = STATE_TITLE
+
         if game_state == STATE_TITLE:
             draw_title()
         elif game_state == STATE_PLAY:
