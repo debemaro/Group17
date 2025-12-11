@@ -1,4 +1,4 @@
-import pygame, sys, pymunk,random,math
+import pygame, sys, pymunk,random,math,os
 
 # 初期化
 pygame.init()
@@ -23,14 +23,29 @@ cloud_imgs = [
     pygame.image.load("cloud.png").convert_alpha()
 ]
 
-#積む物体の画像を読み込み(透過)
-TARGET_SIZE = (80, 80)  # ←ここで小さめサイズに調整
-ball_imgs = []
-for i in range(1, 10):
-    img = pygame.image.load(f"ball{i}.png").convert_alpha()
-    img = pygame.transform.smoothscale(img, TARGET_SIZE)
-    ball_imgs.append(img)
+import os
 
+TARGET_SIZE = (80, 80)
+
+ball_imgs = []
+
+filenames = [
+    "ゴミ拾い.png",
+    "お辞儀.png",
+    "植林.png",
+    "道案内.png",
+    "席を譲る.png",
+    "ヘルメットをする.png",
+    "募金.png",
+    "落とし物を届ける.png",
+    "世界を救う.png"
+]
+
+for filename in filenames:
+    img = pygame.image.load(filename).convert_alpha()
+    img = pygame.transform.smoothscale(img, TARGET_SIZE)
+    # 画像とファイル名をセットで保存
+    ball_imgs.append({"image": img, "filename": filename})
 clouds = [] #空のリストを生成
 for i, img in enumerate(cloud_imgs):
     w, h = img.get_size()
@@ -123,7 +138,7 @@ def draw_rule():
     rules = ["【遊び方】","1. マウスでブロックを左右に動かします。",
              "2. クリックでブロックを落とします。",
              "3. 地面や積み上げたブロックに重ねて積みます。",
-             "4. "] #ルールの内容
+             "4. たくさん積んでスコアアップを目指そう"] #ルールの内容
     y = HEIGHT//4 #1行目の高さ
     for line in rules: #rulesのリストの数だけループ
         t = small_font.render(line, True, BLACK)
@@ -144,20 +159,25 @@ def draw_book():
     # 配置設定
     cols = 3                     # 1行に並べる数
     gap_x, gap_y = 300, 150      # 画像間隔
-    start_y = 220              # タイトルより下に開始
+    start_y = 220                # タイトルより下に開始
 
     # グリッド全体の幅を計算して中央寄せ
     grid_width = cols * gap_x
     start_x = WIDTH//2 - grid_width//2 + 120
 
-    for i, img in enumerate(ball_imgs):
-        row = i // cols
-        col = i % cols
-        rect = img.get_rect(topleft=(start_x + col * gap_x, start_y + row * gap_y))
+    for i, data in enumerate(ball_imgs):
+        img = data["image"]
+        filename = data["filename"]
+
+        # 拡張子を除いた名前だけ表示
+        name_only = os.path.splitext(filename)[0]
+
+        rect = img.get_rect(topleft=(start_x + (i % cols) * gap_x,
+                                     start_y + (i // cols) * gap_y))
         screen.blit(img, rect)
 
-        # ラベル
-        label = small_font.render(f"Ball {i+1}", True, BLACK)
+        # ←ここを追加：ラベル描画
+        label = small_font.render(name_only, True, BLACK)
         screen.blit(label, (rect.centerx - label.get_width()//2, rect.bottom + 5))
 
     # 戻るボタン
@@ -178,26 +198,28 @@ def reset_space():
 
 #積む物体の形についての情報
 #ランダム生成
-def create_random_block(x, y,add_to_space = True):
+def create_random_block(x, y, add_to_space=True):
     # 画像インデックスと重みを指定
     indices = list(range(9))  # 0〜8
-    weights = [2.5,2.5,2.5,   # 四角形 (ball1〜3) → 重み大
-               2.5,2.5,2.5,   # 台形 (ball4〜6)
-               2,2,     # 六角形 (ball7〜8)
-               1]     # 円 (ball9) → 最も少ない
+    weights = [
+        2.5, 2.5, 2.5,   # 四角形 (ball1〜3)
+        2.5, 2.5, 2.5,   # 台形 (ball4〜6)
+        2, 2,            # 六角形 (ball7〜8)
+        1                # 円 (ball9)
+    ]
 
     idx = random.choices(indices, weights=weights, k=1)[0]
-    img = ball_imgs[idx]
+    data = ball_imgs[idx]      # ← dict を取り出す
+    img = data["image"]        # ← Surface を取り出す
 
-    if idx in [0,1,2]:   # 四角形
-        return create_square(x,y,img,size=70,mass=70,add_to_space=add_to_space)
-    elif idx in [3,4,5]: # 台形
-        return create_trapezoid(x,y,img,top=60,bottom=80,height=70,mass=70,add_to_space=add_to_space)
-    elif idx in [6,7]:   # 六角形
-        return create_hexball(x,y,img,radius=40,mass=50,add_to_space= add_to_space)
-    else:                # 円
-        return create_circle(x,y,img,radius=40,mass=50,add_to_space=add_to_space)
-    
+    if idx in [0, 1, 2]:   # 四角形
+        return create_square(x, y, img, size=70, mass=70, add_to_space=add_to_space)
+    elif idx in [3, 4, 5]: # 台形
+        return create_trapezoid(x, y, img, top=60, bottom=80, height=70, mass=70, add_to_space=add_to_space)
+    elif idx in [6, 7]:   # 六角形
+        return create_hexball(x, y, img, radius=40, mass=50, add_to_space=add_to_space)
+    else:                 # 円
+        return create_circle(x, y, img, radius=40, mass=50, add_to_space=add_to_space)
 def draw_block(block):
     if block["type"]=="square":
         draw_square(block)
@@ -209,7 +231,7 @@ def draw_block(block):
         draw_circle(block)
 
 #四角形の情報
-def create_square(x, y, img, size, mass, add_to_space=True):
+def create_square(x, y, img, size=60, mass=60, add_to_space=True):
     scaled_img = pygame.transform.scale(img, (size, size))
     moment = pymunk.moment_for_box(mass, (size, size))
     body = pymunk.Body(mass, moment, body_type=pymunk.Body.DYNAMIC)
@@ -446,7 +468,7 @@ def draw_result(final_score):
     return back_button
 
 def main():
-    global game_state
+    global game_state,back_button
     current_music = None
     score = 0
 
