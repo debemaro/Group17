@@ -146,7 +146,6 @@ def draw_rule():
         y += 70 #高さを変更
 
     #戻るボタン
-    pygame.draw.rect(screen, BUTTON_COLOR, back_button, border_radius=20)
     t = font.render("戻る", True, BLACK)
     screen.blit(t, (back_button.centerx-t.get_width()//2, back_button.centery-t.get_height()//2))
     pygame.draw.rect(screen, BLACK, back_button, 3, border_radius=20)
@@ -543,4 +542,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
